@@ -1,88 +1,58 @@
 package middleware
 
 import (
-	"botp-gateway/model"
-	jsonWebToken "botp-gateway/utils/jwt"
-	"slices"
+	"botp-gateway/gorm"
+	model "botp-gateway/model"
+	rsa "botp-gateway/utils/rsa"
+	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func ExtractToken(c *fiber.Ctx) (string, error) {
-	tokenString := c.Get("Authorization")
-	if tokenString == "" {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: No token provided")
-	}
-
-	if len(tokenString) < 7 || tokenString[:7] != "Bearer " {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Invalid token format")
-	}
-
-	return tokenString[7:], nil
-}
-
-func Authen() fiber.Handler {
+func AuthMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		token, err := ExtractToken(c)
+		// Extract API key, timestamp, nonce, and signature from the request headers.
+		apiKeyHeader := c.Get("X-Botp-Api-Key")
+		timestampHeader := c.Get("X-Botp-Api-Timestamp")
+		nonceHeader := c.Get("X-Botp-Api-Nonce")
+		signature := c.Get("X-Botp-Api-Signature")
+
+		apiKey := model.ApiKeys{
+			ApiKey: apiKeyHeader,
+		}
+
+		err := gorm.DB.First(&apiKey).Error
 		if err != nil {
-			return err
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
+		}
+		timestampInt, _ := strconv.ParseInt(timestampHeader, 10, 64)
+
+		currentTimestamp := time.Now().Unix()
+		timeWindow := int64(300) // 5-minute time window
+
+		if currentTimestamp-timestampInt > timeWindow {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
 		}
 
-		claims, err := jsonWebToken.ParseToken(token)
-		if err != nil {
-			return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Invalid token")
+		// Retrieve the request body using Fiber's built-in parsing middleware.
+		requestBody := string(c.Request().Body())
+
+		// You can include other request data as needed for signature verification.
+		message := []byte(fmt.Sprintf("%s%s%s%s%s%s", apiKey.ApiKey, timestampHeader, nonceHeader, c.Path(), c.Method(), requestBody))
+		if !rsa.VerifyRSASignature(apiKey.PublicKeyPEM, signature, message) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid signature",
+			})
 		}
 
-		c.Locals("user", claims)
-
-		return c.Next()
-	}
-}
-
-func Author(roles ...model.Role) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		token, err := ExtractToken(c)
-		if err != nil {
-			return err
-		}
-
-		claims, err := jsonWebToken.ParseToken(token)
-		if err != nil {
-			return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: "+err.Error())
-		}
-
-		if !slices.Contains(roles, claims.Role) {
-			return fiber.NewError(fiber.StatusForbidden, "Forbidden: Insufficient privileges")
-		}
-
-		c.Locals("user", claims)
-
-		return c.Next()
-	}
-}
-
-func AuthenEmail() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		token, err := ExtractToken(c)
-		if err != nil {
-			return err
-		}
-
-		claims, err := jsonWebToken.ParseTokenEmail(token)
-		if err != nil {
-			return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Invalid token")
-		}
-
-		isInWhitelist, err := jsonWebToken.IsInWhitelist(claims.Email, token)
-
-		if err != nil || !isInWhitelist {
-			return fiber.NewError(fiber.StatusUnauthorized, "Unauthorized: Token is not valid in whitelist")
-		}
-
-		jsonWebToken.RemoveFromWhitelist(claims.Email)
-
-		c.Locals("user", claims)
-
+		c.Locals("ClientID", apiKey.ClientID)
+		// Authentication passed; continue with the next middleware or route handler.
 		return c.Next()
 	}
 }
