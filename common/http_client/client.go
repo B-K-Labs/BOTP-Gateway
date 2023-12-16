@@ -1,4 +1,4 @@
-package http_request
+package http_client
 
 import (
 	"botp-gateway/common/constants"
@@ -15,6 +15,7 @@ func Initialize() {
 	baseUrl := config.Env(constants.ENV_KEY_BOTP_BACKEND_URL)
 	// Initialize http client
 	client = req.C().
+		// TODO: Set common user agent
 		SetUserAgent("my-custom-client").
 		SetCommonContentType("application/json").
 		// TODO: Set common bearer auth token
