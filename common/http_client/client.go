@@ -15,13 +15,23 @@ func Initialize() {
 	baseUrl := config.Env(constants.ENV_KEY_BOTP_BACKEND_URL)
 	// Initialize http client
 	client = req.C().
+		// TODO: Remove this line when not in development mode
+		DevMode().
 		// TODO: Set common user agent
 		SetUserAgent("my-custom-client").
 		SetCommonContentType("application/json").
 		// TODO: Set common bearer auth token
 		SetCommonBearerAuthToken("my-token").
 		SetBaseURL(baseUrl).
-		SetTimeout(30 * time.Second)
+		SetTimeout(30 * time.Second).
+		OnBeforeRequest(func(client *req.Client, req *req.Request) error {
+			// TODO: Do something before request
+			return nil
+		}).
+		OnAfterResponse(func(client *req.Client, resp *req.Response) error {
+			// TODO: Do something after response
+			return nil
+		})
 }
 
 func GetHttpClient() *req.Client {
