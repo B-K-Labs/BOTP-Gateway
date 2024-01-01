@@ -7,8 +7,8 @@ import (
 )
 
 func CreateRouter(app *fiber.App) {
-	r := app.Group("/authen")
+	authRouter := app.Group("/authen")
 	{
-		r.Post("/createAccount", authService.CreateAccount)
+		authRouter.Post("/createAccount", authService.CreateAccount)
 	}
 }
