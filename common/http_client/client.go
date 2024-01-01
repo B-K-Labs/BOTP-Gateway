@@ -23,7 +23,7 @@ func Initialize() {
 		// TODO: Set common bearer auth token
 		SetCommonBearerAuthToken("my-token").
 		SetBaseURL(baseUrl).
-		SetTimeout(30 * time.Second).
+		SetTimeout(constants.CLIENT_REQUEST_TIMEOUT * time.Second).
 		OnBeforeRequest(func(client *req.Client, req *req.Request) error {
 			// TODO: Do something before request
 			return nil
