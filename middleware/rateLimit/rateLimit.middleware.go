@@ -1,6 +1,7 @@
 package rateLimitMiddleware
 
 import (
+	"botp-gateway/common/constants"
 	"botp-gateway/validator"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 func RateLimit() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        1,
-		Expiration: 30 * time.Second,
+		Expiration: constants.RATE_LIMITER_TIMEOUT * time.Second,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return c.IP()
 		},
@@ -27,7 +28,7 @@ func RateLimit() fiber.Handler {
 func RateLimitByEmail() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        1,
-		Expiration: 30 * time.Second,
+		Expiration: constants.RATE_LIMITER_TIMEOUT * time.Second,
 		KeyGenerator: func(c *fiber.Ctx) string {
 
 			payload := validator.WithEmail{}
