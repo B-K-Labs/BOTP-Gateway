@@ -3,6 +3,7 @@ package jsonWebToken
 import (
 	"botp-gateway/config"
 	"botp-gateway/model"
+	"fmt"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -36,6 +37,29 @@ func CreateToken(args MapClaims) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func ParseTokenToUserId(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(JWTKey), nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("error when parse token to claims JWT")
+	}
+
+	// Sign key of identifier system is _id
+	id, ok := claims["_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("error id not found in claims")
+	}
+
+	return id, nil
 }
 
 func ParseToken(tokenString string) (*MapClaims, error) {

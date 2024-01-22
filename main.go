@@ -2,6 +2,7 @@ package main
 
 import (
 	"botp-gateway/config"
+	rateLimit "botp-gateway/middleware/rateLimit"
 	"botp-gateway/router"
 
 	"github.com/gofiber/fiber/v2"
@@ -42,6 +43,9 @@ func main() {
 
 	// Initialize default config
 	app.Use(logger.New(logger.Config{}))
+
+	// init
+	app.Use(rateLimit.RateLimit())
 
 	//Initialize connect to database
 	// gorm.Connection()

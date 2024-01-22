@@ -2,6 +2,9 @@ package rateLimitMiddleware
 
 import (
 	"botp-gateway/common/constants"
+	"botp-gateway/utils/http"
+	jsonWebToken "botp-gateway/utils/jwt"
+
 	"botp-gateway/validator"
 	"time"
 
@@ -14,6 +17,13 @@ func RateLimit() fiber.Handler {
 		Max:        1,
 		Expiration: constants.RATE_LIMITER_TIMEOUT * time.Second,
 		KeyGenerator: func(c *fiber.Ctx) string {
+			reqToken := http.GetBearerTokenFromHeader(c)
+			if len(reqToken) > 0 {
+				id, err := jsonWebToken.ParseTokenToUserId(reqToken)
+				if (err == nil) && (id != "") {
+					return id
+				}
+			}
 			return c.IP()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
