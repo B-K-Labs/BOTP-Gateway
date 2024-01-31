@@ -11,4 +11,9 @@ func CreateRouter(app *fiber.App) {
 	{
 		authRouter.Post("/createAccount", authService.CreateAccount)
 	}
+	dashBoardRouter := app.Group("/dashboardAuthen")
+	{
+		dashBoardRouter.Post("/signIn", authService.DashboardSignIn)
+		dashBoardRouter.Get("/info", authService.DashboardUserInfo)
+	}
 }

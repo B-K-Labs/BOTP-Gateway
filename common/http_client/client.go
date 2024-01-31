@@ -18,10 +18,10 @@ func Initialize() {
 		// TODO: Remove this line when not in development mode
 		DevMode().
 		// TODO: Set common user agent
-		SetUserAgent("my-custom-client").
+		// SetUserAgent("my-custom-client").
 		SetCommonContentType("application/json").
 		// TODO: Set common bearer auth token
-		SetCommonBearerAuthToken("my-token").
+		// SetCommonBearerAuthToken("my-token").
 		SetBaseURL(baseUrl).
 		SetTimeout(constants.CLIENT_REQUEST_TIMEOUT * time.Second).
 		OnBeforeRequest(func(client *req.Client, req *req.Request) error {

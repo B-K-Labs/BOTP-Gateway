@@ -47,7 +47,7 @@ func MakeRequestFromFiber(c *fiber.Ctx, path string) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"success": false,
-			"message": "Gateway error",
+			"message": "Gateway error: " + err.Error(),
 		})
 	}
 

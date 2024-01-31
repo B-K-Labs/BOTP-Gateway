@@ -14,7 +14,7 @@ import (
 
 func RateLimit() fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        1,
+		Max:        30,
 		Expiration: constants.RATE_LIMITER_TIMEOUT * time.Second,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			reqToken := http.GetBearerTokenFromHeader(c)

@@ -7,8 +7,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-
-	redis "botp-gateway/utils/redis"
 )
 
 var timeExpiredTokenEmail = time.Minute * 15
@@ -59,6 +57,7 @@ func ParseTokenToUserId(tokenString string) (string, error) {
 		return "", fmt.Errorf("error id not found in claims")
 	}
 
+	fmt.Printf("Found id: %s\n", id)
 	return id, nil
 }
 
@@ -94,73 +93,73 @@ func ParseToken(tokenString string) (*MapClaims, error) {
 	return mapClaims, nil
 }
 
-var JWTKeyEmail = config.Env("JWT_KEY_EMAIL")
+// var JWTKeyEmail = config.Env("JWT_KEY_EMAIL", "")
 
-func CreateTokenEmail(args MapClaims) (string, error) {
-	claims := jwt.MapClaims{
-		"id":           args.ID,
-		"email":        args.Email,
-		"role":         args.Role,
-		"exp":          time.Now().Add(timeExpiredTokenEmail).Unix(),
-		"isSetupAdmin": args.IsSetupAdmin,
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(JWTKeyEmail))
-	if err != nil {
-		return "", err
-	}
+// func CreateTokenEmail(args MapClaims) (string, error) {
+// 	claims := jwt.MapClaims{
+// 		"id":           args.ID,
+// 		"email":        args.Email,
+// 		"role":         args.Role,
+// 		"exp":          time.Now().Add(timeExpiredTokenEmail).Unix(),
+// 		"isSetupAdmin": args.IsSetupAdmin,
+// 	}
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	tokenString, err := token.SignedString([]byte(JWTKeyEmail))
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	AddToWhitelist(args.Email, tokenString)
+// 	AddToWhitelist(args.Email, tokenString)
 
-	return tokenString, nil
-}
+// 	return tokenString, nil
+// }
 
-func ParseTokenEmail(tokenString string) (*MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(JWTKeyEmail), nil
-	})
-	if err != nil {
-		return nil, err
-	}
+// func ParseTokenEmail(tokenString string) (*MapClaims, error) {
+// 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+// 		return []byte(JWTKeyEmail), nil
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, err
-	}
+// 	claims, ok := token.Claims.(jwt.MapClaims)
+// 	if !ok {
+// 		return nil, err
+// 	}
 
-	expiration, ok := claims["exp"].(float64)
-	if !ok {
-		return nil, err
-	}
+// 	expiration, ok := claims["exp"].(float64)
+// 	if !ok {
+// 		return nil, err
+// 	}
 
-	if time.Now().Unix() > int64(expiration) {
-		return nil, err
-	}
+// 	if time.Now().Unix() > int64(expiration) {
+// 		return nil, err
+// 	}
 
-	mapClaims := &MapClaims{
-		ID:    claims["id"].(string),
-		Email: claims["email"].(string),
-		Role:  model.Role{},
-		Exp:   expiration,
-	}
+// 	mapClaims := &MapClaims{
+// 		ID:    claims["id"].(string),
+// 		Email: claims["email"].(string),
+// 		Role:  model.Role{},
+// 		Exp:   expiration,
+// 	}
 
-	return mapClaims, nil
-}
+// 	return mapClaims, nil
+// }
 
-func AddToWhitelist(email string, tokenString string) (bool, error) {
-	result, err := redis.SetWithExpired(email, tokenString, timeExpiredTokenEmail)
+// func AddToWhitelist(email string, tokenString string) (bool, error) {
+// 	result, err := redis.SetWithExpired(email, tokenString, timeExpiredTokenEmail)
 
-	return result, err
-}
+// 	return result, err
+// }
 
-func IsInWhitelist(email string, tokenString string) (bool, error) {
-	result, err := redis.IsExisted(email, tokenString)
+// func IsInWhitelist(email string, tokenString string) (bool, error) {
+// 	result, err := redis.IsExisted(email, tokenString)
 
-	return result, err
-}
+// 	return result, err
+// }
 
-func RemoveFromWhitelist(email string) (bool, error) {
-	result, err := redis.Delete(email)
+// func RemoveFromWhitelist(email string) (bool, error) {
+// 	result, err := redis.Delete(email)
 
-	return result, err
-}
+// 	return result, err
+// }
